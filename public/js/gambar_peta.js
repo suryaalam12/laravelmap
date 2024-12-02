@@ -19,25 +19,30 @@ map.on("pm:create", function (e) {
     if (e.shape === "Polygon") {
         const polygonLayer = e.layer;
         const geoJson = polygonLayer.toGeoJSON();
-        polygon = JSON.stringify(geoJson);
-        sendPolygon();
+        const coordinates = geoJson.geometry.coordinates; // Extract coordinates directly
+        const polygonData = {
+            coordinates: coordinates,
+            type: "Polygon",
+        };
+        sendPolygon(polygonData); // Pass the correctly structured data
     }
 });
 
-function sendPolygon() {
+function sendPolygon(polygonData) {
     return new Promise(function (resolve, reject) {
-        console.log("Sending polygon data:", polygon); // Log the polygon data being sent
+        console.log("Sending polygon data:", polygonData); // Log the structured polygon data
 
         $.ajax({
             url: "/peta?action=join", // POST route
-            data: JSON.stringify(polygon), // GeoJSON string, ensure it's properly serialized
+            data: JSON.stringify(polygonData), // Convert structured data to JSON string
             type: "POST",
             contentType: "application/json", // Specify JSON content type
             headers: {
                 "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"), // Include CSRF token
             },
             success: function (response) {
-                console.log("Success response:", response); // Log successful response
+                var hasilJoin = JSON.parse(response); // Log successful response
+                console.log(hasilJoin);
                 resolve(response);
             },
             error: function (xhr, status, error) {
