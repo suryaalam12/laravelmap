@@ -39,24 +39,29 @@ Route::post('/peta', function (Illuminate\Http\Request $request) {
     $action = $request->input('action');
     if ($action === 'join') {
         $parser = app(GeojsonParser::class);
-        $polygon = $parser->parse('   {
-            "type": "Feature",
-            "properties": {},
-            "geometry": {
-              "coordinates": [
-                [[112.284994,-7.452433],[112.305593,-7.446901],[112.310829,-7.463581],[112.277956,-7.465624],[112.284994,-7.452433]]
-              ],
-              "type": "Polygon"
-            }
-          }');
-        $whereInside = Peta::query()
+        $hasil = $request->getContent();
+        $geojson = json_decode('{
+    "type": "Feature",
+    "properties": {},
+    "geometry": {
+        "coordinates": [
+         [[112.296962,-7.45351],[112.297429,-7.453749],[112.29734,-7.454175],[112.296772,-7.454005],[112.296962,-7.45351]]
+        ],
+        "type": "Polygon"
+    }
+}', true);
+
+        $coordinates = json_encode($geojson['geometry']); // Extract only the geometry part
+
+        $query = Peta::query()
             ->select('dat_objek_pajak.id', 'dat_objek_pajak.geometry')
-            ->stWhere(ST::intersects('dat_objek_pajak.geometry', $polygon))->get();
-
-        return response()->json($whereInside, status: 200);
-
-
-
+            ->whereRaw('ST_IsValid(geometry)')
+            ->where('kd_kecamatan', '160')
+            ->where('kd_kelurahan', '001')
+            ->whereRaw("ST_Intersects(geometry, ST_GeomFromGeoJSON(?))", [$coordinates]);
+        $data = $query->toGeojsonFeatureCollection();
+        return response()->json($data, 200);
+        // ->stWhere(ST::contains('dat_objek_pajak.geometry', $polygon), true)->get();
         // $geoJson = json_decode($geoJsonString, true);
         // // Check for JSON decoding errors
         // if (json_last_error() === JSON_ERROR_NONE && isset($geoJson['geometry'])) {
