@@ -26,20 +26,25 @@ map.on("pm:create", function (e) {
 
 function sendPolygon() {
     return new Promise(function (resolve, reject) {
+        console.log("Sending polygon data:", polygon); // Log the polygon data being sent
+
         $.ajax({
             url: "/peta?action=join", // POST route
-            data: polygon, // GeoJSON string
+            data: JSON.stringify(polygon), // GeoJSON string, ensure it's properly serialized
             type: "POST",
             contentType: "application/json", // Specify JSON content type
             headers: {
                 "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"), // Include CSRF token
             },
             success: function (response) {
-                console.log(response); // Handle success
+                console.log("Success response:", response); // Log successful response
                 resolve(response);
             },
             error: function (xhr, status, error) {
                 console.error("Error:", error);
+                console.log("XHR Status:", xhr.status); // Check the HTTP status code
+                console.log("Response Text:", xhr.responseText); // Check the response text from the server
+                console.log("XHR Object:", xhr); // View the entire XHR object
                 reject(error);
             },
         });
